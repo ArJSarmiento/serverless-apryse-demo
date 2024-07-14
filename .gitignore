@@ -17,6 +17,8 @@ var/
 *.egg
 venv/
 node_modules
+.idea/
+__pycache__/
 
 # Serverless directories
 .serverless
