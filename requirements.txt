@@ -1,0 +1,13 @@
+--extra-index-url=https://pypi.apryse.com
+annotated-types==0.7.0
+apryse-sdk==10.10.0
+boto3==1.34.143
+botocore==1.34.143
+jmespath==1.0.1
+pydantic==2.8.2
+pydantic_core==2.20.1
+python-dateutil==2.9.0.post0
+s3transfer==0.10.2
+six==1.16.0
+typing_extensions==4.12.2
+urllib3==2.2.2

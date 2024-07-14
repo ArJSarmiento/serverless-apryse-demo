@@ -1,0 +1,15 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "Post Request Body Schema",
+    "type": "object",
+    "properties": {
+      "name": { "type": "string" },
+      "dropdownChoice": { "type": "string" },
+      "checkbox1": { "type": "boolean" },
+      "checkbox2": { "type": "boolean" },
+      "checkbox3": { "type": "boolean" },
+      "nameOfDependant": { "type": "string" },
+      "ageOfDependant": { "type": "string" }
+    },
+    "required": ["name"]
+}

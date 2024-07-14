@@ -1,0 +1,135 @@
+org: arjsarmiento
+app: aws-python-http-api-project
+service: aws-python-http-api-project
+frameworkVersion: '3'
+
+package: 
+  patterns:
+    - "!requirements.txt"
+    - "!.serverless/**"
+    - "!venv/**"
+    - "!node_modules/**"
+    - "!.idea/**"
+    - "!node_modules**"
+    - "!local_test/**"
+    - "!package.json"
+    - "!package-lock.json"
+    - "!Pipfile"
+    - "!Pipfile.lock"
+
+custom:
+  serviceName: pdf-service
+  stage: ${opt:stage, self:provider.stage}
+  s3uuid: 01j2ktf90m3ansb11x0xmj13d6
+  templateBucket: ${self:custom.stage}-template-pdfs-${self:custom.s3uuid}
+  userBucket: ${self:custom.stage}-user-pdfs-${self:custom.s3uuid}
+  pythonRequirements:
+    dockerizePip: non-linux
+    noDeploy:
+      - boto3
+      - botocore
+    layer:
+      name: ${self:custom.serviceName}-${self:custom.stage}-python-requirements
+      compatibleRuntimes:
+        - python3.10
+    slim: true
+
+provider:
+  name: aws
+  runtime: python3.10
+  stage: dev
+  region: ap-southeast-1
+  versionFunctions: false
+  timeout: 30
+  environment:
+    REGION: ${self:provider.region}
+    STAGE: ${self:custom.stage}
+    APRYSE_LICENSE_KEY: ${ssm:APRYSE_LICENSE_KEY}
+  logs:
+    restApi: true
+
+resources:
+  Resources:
+    User:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: users
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+
+    TemplateBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.templateBucket}
+        VersioningConfiguration:
+          Status: Enabled
+        CorsConfiguration:
+          CorsRules:
+            - AllowedHeaders: ['*']
+              AllowedMethods: [GET, PUT, HEAD]
+              AllowedOrigins: ['*']
+              Id: template-pdfs-cors-policy
+              MaxAge: '3600'
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: false
+          IgnorePublicAcls: false
+          BlockPublicPolicy: false
+          RestrictPublicBuckets: false
+
+    UserBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.userBucket}
+        VersioningConfiguration:
+          Status: Enabled
+        CorsConfiguration:
+          CorsRules:
+            - AllowedHeaders: ['*']
+              AllowedMethods: [GET, PUT, HEAD]
+              AllowedOrigins: ['*']
+              Id: user-pdfs-cors-policy
+              MaxAge: '3600'
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: false
+          IgnorePublicAcls: false
+          BlockPublicPolicy: false
+          RestrictPublicBuckets: false
+
+functions:
+  fillPDF:
+    handler: handler.fill_pdf
+    timeout: 29
+    events:
+      - http:
+          path: fill_pdf
+          method: post
+          cors: true
+          request:
+            parameters:
+              querystrings:
+                ownerId: true
+            schemas:
+              application/json: ${file(schema.json)}
+    layers:
+      - Ref: PythonRequirementsLambdaLayer
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - s3:GetObject
+          - s3:PutObject
+        Resource:
+          - arn:aws:s3:::${self:custom.templateBucket}/*
+          - arn:aws:s3:::${self:custom.userBucket}/*
+      - Effect: Allow
+        Action:
+          - dynamodb:*
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/users
+
+plugins:
+  - serverless-python-requirements
+  - serverless-iam-roles-per-function
