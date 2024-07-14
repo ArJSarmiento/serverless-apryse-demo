@@ -19,6 +19,7 @@ venv/
 node_modules
 .idea/
 __pycache__/
+.DS_Store
 
 # Serverless directories
 .serverless
